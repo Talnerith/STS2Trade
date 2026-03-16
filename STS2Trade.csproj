@@ -61,6 +61,10 @@
             <Private>false</Private>
             <Publicize>true</Publicize>
         </Reference>
+        <Reference Include="BaseLib">
+            <HintPath>$(Sts2Path)/mods/BaseLib/BaseLib.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
 
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
         <AdditionalFiles Include="STS2Trade/localization/**/*.json"/>

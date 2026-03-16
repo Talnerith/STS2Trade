@@ -1,3 +1,4 @@
+using BaseLib.Config;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
@@ -15,7 +16,7 @@ public partial class MainFile : Node
     {
         Logger.Info("STS2Trade: Campfire Trading mod initializing...");
 
-        TradeConfig.Load();
+        ModConfigRegistry.Register(ModId, new TradeConfig());
 
         Harmony harmony = new(ModId);
         harmony.PatchAll();

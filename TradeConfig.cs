@@ -1,13 +1,11 @@
-using System;
-using System.IO;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using BaseLib.Config;
+using Godot;
 using MegaCrit.Sts2.Core.Models;
 
 namespace STS2Trade;
 
-public static class TradeConfig
+public class TradeConfig : ModConfig
 {
     public static int MaxCardSlots { get; set; } = 3;
     public static int MaxPotionSlots { get; set; } = 3;
@@ -32,68 +30,90 @@ public static class TradeConfig
     /// </summary>
     public static bool BlockQuestCards { get; set; } = true;
 
-    private static string? _configPath;
+    public TradeConfig() : base("STS2Trade.cfg") { }
 
-    public static void Load()
+    public override void SetupConfigUI(Control optionContainer)
     {
-        try
-        {
-            // Config file sits next to the DLL
-            var dllDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (dllDir == null) return;
-            _configPath = Path.Combine(dllDir, "trade_config.json");
+        var options = new VBoxContainer();
+        options.Size = optionContainer.Size;
+        options.AddThemeConstantOverride("separation", 8);
+        optionContainer.AddChild(options);
 
-            if (!File.Exists(_configPath))
+        foreach (var property in ConfigProperties)
+        {
+            if (property.PropertyType == typeof(bool))
             {
-                MainFile.Logger.Info($"[TradeConfig] No config file at {_configPath}, using defaults. Creating default config.");
-                Save();
-                return;
+                MakeToggleOption(options, property);
             }
-
-            var json = File.ReadAllText(_configPath);
-            var data = JsonSerializer.Deserialize<ConfigData>(json);
-            if (data == null) return;
-
-            MaxCardSlots = data.MaxCardSlots;
-            MaxPotionSlots = data.MaxPotionSlots;
-            MaxRelicSlots = data.MaxRelicSlots;
-            UnlimitedTrades = data.UnlimitedTrades;
-            BlockObtainHookRelics = data.BlockObtainHookRelics;
-            BlockQuestCards = data.BlockQuestCards;
-
-            MainFile.Logger.Info($"[TradeConfig] Loaded: UnlimitedTrades={UnlimitedTrades}, BlockObtainHookRelics={BlockObtainHookRelics}, BlockQuestCards={BlockQuestCards}");
-        }
-        catch (Exception e)
-        {
-            MainFile.Logger.Error($"[TradeConfig] Failed to load config: {e.Message}");
+            else if (property.PropertyType == typeof(int))
+            {
+                MakePaginatorOption(options, property);
+            }
         }
     }
 
-    public static void Save()
+    private void MakePaginatorOption(Control parent, PropertyInfo property)
     {
-        try
+        var (min, max, step) = property.Name switch
         {
-            if (_configPath == null) return;
+            nameof(MaxCardSlots) => (1, 5, 1),
+            nameof(MaxPotionSlots) => (1, 3, 1),
+            nameof(MaxRelicSlots) => (1, 3, 1),
+            _ => (1, 10, 1)
+        };
 
-            var data = new ConfigData
-            {
-                MaxCardSlots = MaxCardSlots,
-                MaxPotionSlots = MaxPotionSlots,
-                MaxRelicSlots = MaxRelicSlots,
-                UnlimitedTrades = UnlimitedTrades,
-                BlockObtainHookRelics = BlockObtainHookRelics,
-                BlockQuestCards = BlockQuestCards,
-            };
+        var container = MakeOptionContainer(parent, "Paginator_" + property.Name, property.Name);
 
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(data, options);
-            File.WriteAllText(_configPath, json);
-            MainFile.Logger.Info($"[TradeConfig] Saved config to {_configPath}");
-        }
-        catch (Exception e)
+        var paginatorBox = new HBoxContainer();
+        paginatorBox.AddThemeConstantOverride("separation", 8);
+        paginatorBox.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        paginatorBox.SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd;
+
+        int currentVal = Math.Clamp((int)(property.GetValue(null) ?? min), min, max);
+
+        var valueLabel = new Label();
+        valueLabel.Text = currentVal.ToString();
+        valueLabel.CustomMinimumSize = new Vector2(40, 0);
+        valueLabel.HorizontalAlignment = HorizontalAlignment.Center;
+        valueLabel.AddThemeColorOverride("font_color", new Color("E8DCBE"));
+        valueLabel.AddThemeFontSizeOverride("font_size", 20);
+
+        var leftBtn = new Button();
+        leftBtn.Text = "<";
+        leftBtn.CustomMinimumSize = new Vector2(36, 36);
+        leftBtn.AddThemeColorOverride("font_color", new Color("EFC851"));
+        leftBtn.AddThemeFontSizeOverride("font_size", 20);
+        leftBtn.Flat = true;
+
+        var rightBtn = new Button();
+        rightBtn.Text = ">";
+        rightBtn.CustomMinimumSize = new Vector2(36, 36);
+        rightBtn.AddThemeColorOverride("font_color", new Color("EFC851"));
+        rightBtn.AddThemeFontSizeOverride("font_size", 20);
+        rightBtn.Flat = true;
+
+        leftBtn.Pressed += () =>
         {
-            MainFile.Logger.Error($"[TradeConfig] Failed to save config: {e.Message}");
-        }
+            currentVal -= step;
+            if (currentVal < min) currentVal = max;
+            valueLabel.Text = currentVal.ToString();
+            property.SetValue(null, currentVal);
+            Changed();
+        };
+
+        rightBtn.Pressed += () =>
+        {
+            currentVal += step;
+            if (currentVal > max) currentVal = min;
+            valueLabel.Text = currentVal.ToString();
+            property.SetValue(null, currentVal);
+            Changed();
+        };
+
+        paginatorBox.AddChild(leftBtn);
+        paginatorBox.AddChild(valueLabel);
+        paginatorBox.AddChild(rightBtn);
+        container.AddChild(paginatorBox);
     }
 
     /// <summary>
@@ -105,26 +125,5 @@ public static class TradeConfig
         var method = relic.GetType().GetMethod("AfterObtained",
             BindingFlags.Instance | BindingFlags.Public);
         return method != null && method.DeclaringType != typeof(RelicModel);
-    }
-
-    private class ConfigData
-    {
-        [JsonPropertyName("maxCardSlots")]
-        public int MaxCardSlots { get; set; } = 3;
-
-        [JsonPropertyName("maxPotionSlots")]
-        public int MaxPotionSlots { get; set; } = 3;
-
-        [JsonPropertyName("maxRelicSlots")]
-        public int MaxRelicSlots { get; set; } = 1;
-
-        [JsonPropertyName("unlimitedTrades")]
-        public bool UnlimitedTrades { get; set; } = false;
-
-        [JsonPropertyName("blockObtainHookRelics")]
-        public bool BlockObtainHookRelics { get; set; } = true;
-
-        [JsonPropertyName("blockQuestCards")]
-        public bool BlockQuestCards { get; set; } = true;
     }
 }
