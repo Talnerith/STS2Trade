@@ -1,0 +1,11 @@
+{
+  "id": "STS2Trade",
+  "name": "Campfire Trading",
+  "author": "STS2Trade",
+  "description": "Adds card, potion, and relic trading between players at campfires in multiplayer.",
+  "version": "v1.0",
+  "has_pck": true,
+  "has_dll": true,
+  "dependencies": [],
+  "affects_gameplay": true
+}

@@ -1,0 +1,109 @@
+<Project Sdk="Godot.NET.Sdk/4.5.1">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DefaultItemExcludes>packages/**</DefaultItemExcludes>
+        <!-- Source generators needed for virtual method dispatch (_Ready, _Process, _Input, _Draw, etc.) -->
+        <!-- <DisableImplicitGodotGeneratorReferences>true</DisableImplicitGodotGeneratorReferences> -->
+    </PropertyGroup>
+
+    <!-- OS Detection -->
+    <PropertyGroup>
+        <IsWindows>false</IsWindows>
+        <IsLinux>false</IsLinux>
+        <IsOSX>false</IsOSX>
+        <IsWindows Condition="$([MSBuild]::IsOSPlatform('Windows'))">true</IsWindows>
+        <IsLinux Condition="$([MSBuild]::IsOSPlatform('Linux'))">true</IsLinux>
+        <IsOSX Condition="$([MSBuild]::IsOSPlatform('OSX'))">true</IsOSX>
+    </PropertyGroup>
+
+    <!-- Windows -->
+    <PropertyGroup Condition="'$(IsWindows)' == 'true'">
+        <AutoSteamPath>$(registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)\steamapps</AutoSteamPath>
+        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == '' and Exists('$(AutoSteamPath)/common/Slay the Spire 2')">$(AutoSteamPath)</SteamLibraryPath>
+        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == '' and Exists('E:/SteamLibrary/steamapps/common/Slay the Spire 2')">E:/SteamLibrary/steamapps</SteamLibraryPath>
+        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">C:/Program Files (x86)/Steam/steamapps</SteamLibraryPath>
+        <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <!-- Local game path fallback -->
+        <Sts2Path Condition="!Exists('$(Sts2Path)') and Exists('$(MSBuildProjectDirectory)/../game')">$(MSBuildProjectDirectory)/../game</Sts2Path>
+        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
+        <GodotPath Condition="'$(GodotPath)' == ''">C:/megadot/MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
+        <!-- Local Megadot fallback -->
+        <GodotPath Condition="!Exists('$(GodotPath)')">$(MSBuildProjectDirectory)/../megadot-4.5.1-m.8-windows-x86_64-llvm-editor-csharp/MegaDot_v4.5.1-stable_mono_win64.exe</GodotPath>
+    </PropertyGroup>
+
+    <!-- Linux -->
+    <PropertyGroup Condition="'$(IsLinux)' == 'true'">
+        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/.local/share/Steam/steamapps</SteamLibraryPath>
+        <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_linuxbsd_x86_64</Sts2DataDir>
+        <GodotPath Condition="'$(GodotPath)' == ''">$(SteamLibraryPath)/common/Godot Engine/godot.x11.opt.tools.64</GodotPath>
+    </PropertyGroup>
+
+    <!-- macOS -->
+    <PropertyGroup Condition="'$(IsOSX)' == 'true'">
+        <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">$(HOME)/Library/Application Support/Steam/steamapps</SteamLibraryPath>
+        <Sts2Path Condition="'$(Sts2Path)' == ''">$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+        <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Path)/data_sts2_macos_x86_64</Sts2DataDir>
+        <GodotPath Condition="'$(GodotPath)' == ''">$(HOME)/</GodotPath>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <Reference Include="0Harmony">
+            <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="sts2">
+            <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
+            <Publicize>true</Publicize>
+        </Reference>
+
+        <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
+        <AdditionalFiles Include="STS2Trade/localization/**/*.json"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="STS2Trade/**" />
+        <Compile Remove="materials/**" />
+        <Compile Remove="shaders/**" />
+        <Compile Remove="images/**" />
+        <EmbeddedResource Remove="STS2Trade/**" />
+        <EmbeddedResource Remove="materials/**" />
+        <EmbeddedResource Remove="shaders/**" />
+        <EmbeddedResource Remove="images/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include=".gitignore" />
+        <None Include="mod_manifest.json" />
+        <None Include="project.godot"/>
+        <None Include="STS2Trade/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
+        <Message Text="Copying .dll to mods folder." Importance="high" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(Sts2Path)/mods/$(MSBuildProjectName)/" />
+    </Target>
+
+    <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'">
+        <Message Text="Exporting Godot .pck to mods folder" Importance="high"/>
+        <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;BasicExport&quot; &quot;$(Sts2Path)/mods/$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;"
+              EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1"
+              ContinueOnError="WarnAndContinue"/>
+    </Target>
+
+    <Target Name="GodotPublishSkipped" AfterTargets="Publish" Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')">
+        <Message Text="Skipping Godot .pck export because GodotPath is not configured." Importance="high"/>
+    </Target>
+</Project>
