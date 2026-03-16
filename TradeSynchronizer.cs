@@ -349,9 +349,9 @@ public class TradeSynchronizer : IDisposable
             UnlimitedTrades = TradeConfig.UnlimitedTrades,
             BlockObtainHookRelics = TradeConfig.BlockObtainHookRelics,
             BlockQuestCards = TradeConfig.BlockQuestCards,
-            MaxCardSlots = TradeConfig.MaxCardSlots,
-            MaxPotionSlots = TradeConfig.MaxPotionSlots,
-            MaxRelicSlots = TradeConfig.MaxRelicSlots,
+            MaxCardSlots = TradeConfig.MaxCardSlotsInt,
+            MaxPotionSlots = TradeConfig.MaxPotionSlotsInt,
+            MaxRelicSlots = TradeConfig.MaxRelicSlotsInt,
         });
     }
 
@@ -364,9 +364,9 @@ public class TradeSynchronizer : IDisposable
         TradeConfig.UnlimitedTrades = message.UnlimitedTrades;
         TradeConfig.BlockObtainHookRelics = message.BlockObtainHookRelics;
         TradeConfig.BlockQuestCards = message.BlockQuestCards;
-        TradeConfig.MaxCardSlots = message.MaxCardSlots;
-        TradeConfig.MaxPotionSlots = message.MaxPotionSlots;
-        TradeConfig.MaxRelicSlots = message.MaxRelicSlots;
+        TradeConfig.MaxCardSlots = (CardSlots)message.MaxCardSlots;
+        TradeConfig.MaxPotionSlots = (PotionSlots)message.MaxPotionSlots;
+        TradeConfig.MaxRelicSlots = (RelicSlots)message.MaxRelicSlots;
     }
 
     /// <summary>

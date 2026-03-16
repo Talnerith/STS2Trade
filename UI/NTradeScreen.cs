@@ -330,13 +330,13 @@ public partial class NTradeScreen : Control
             column.AddChild(_partnerConfirmIndicator);
         }
 
-        BuildSlotSection(column, "Cards", TradeConfig.MaxCardSlots, isLocal,
+        BuildSlotSection(column, "Cards", TradeConfig.MaxCardSlotsInt, isLocal,
             isLocal ? _localCardSlots : _partnerCardSlots, NTradeSlot.SlotType.Card);
 
-        BuildSlotSection(column, "Potions", TradeConfig.MaxPotionSlots, isLocal,
+        BuildSlotSection(column, "Potions", TradeConfig.MaxPotionSlotsInt, isLocal,
             isLocal ? _localPotionSlots : _partnerPotionSlots, NTradeSlot.SlotType.Potion);
 
-        BuildSlotSection(column, "Relics", TradeConfig.MaxRelicSlots, isLocal,
+        BuildSlotSection(column, "Relics", TradeConfig.MaxRelicSlotsInt, isLocal,
             isLocal ? _localRelicSlots : _partnerRelicSlots, NTradeSlot.SlotType.Relic);
 
         return column;
@@ -498,9 +498,9 @@ public partial class NTradeScreen : Control
         var offer = _sync.ActiveSession.LocalOffer;
         int maxSlots = type switch
         {
-            NTradeSlot.SlotType.Card => TradeConfig.MaxCardSlots,
-            NTradeSlot.SlotType.Potion => TradeConfig.MaxPotionSlots,
-            NTradeSlot.SlotType.Relic => TradeConfig.MaxRelicSlots,
+            NTradeSlot.SlotType.Card => TradeConfig.MaxCardSlotsInt,
+            NTradeSlot.SlotType.Potion => TradeConfig.MaxPotionSlotsInt,
+            NTradeSlot.SlotType.Relic => TradeConfig.MaxRelicSlotsInt,
             _ => 0
         };
 
