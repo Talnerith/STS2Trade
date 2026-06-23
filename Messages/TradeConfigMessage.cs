@@ -20,6 +20,7 @@ public struct TradeConfigMessage : INetMessage, IPacketSerializable
     public bool ShouldBroadcast => true;
     public NetTransferMode Mode => NetTransferMode.Reliable;
     public LogLevel LogLevel => LogLevel.Debug;
+    public bool ShouldBuffer => false;
 
     public void Serialize(PacketWriter writer)
     {

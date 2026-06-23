@@ -46,11 +46,21 @@ public sealed class TradeRestSiteOption : RestSiteOption
         }
     }
 
+    // IsEnabled became a read-only virtual property in STS2 v0.107.1 (it used to have a
+    // setter). Override it to compute trade availability dynamically instead of assigning
+    // it in the constructor.
+    public override bool IsEnabled
+    {
+        get
+        {
+            var sync = TradeSynchronizer.Instance;
+            return Owner.RunState.Players.Count > 1
+                && (sync == null || sync.CanTrade(Owner.NetId));
+        }
+    }
+
     public TradeRestSiteOption(Player owner) : base(owner)
     {
-        var sync = TradeSynchronizer.Instance;
-        IsEnabled = owner.RunState.Players.Count > 1
-            && (sync == null || sync.CanTrade(owner.NetId));
         MainFile.Logger.Info($"[TradeRestSiteOption] IsEnabled={IsEnabled} for {owner.NetId}, UnlimitedTrades={TradeConfig.UnlimitedTrades}");
     }
 
